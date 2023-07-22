@@ -67,7 +67,8 @@ x-airflow-common:
     GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
     # For using apache-airflow-providers-google, see the set-up here
     # https://airflow.apache.org/docs/apache-airflow-providers-google/stable/connections/gcp.html    
-    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: ${AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT}
+    # Currently commented out until GCSToBigQueryOperator gets an update next release
+    # AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: ${AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
