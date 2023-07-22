@@ -41,7 +41,7 @@ def bpi_etl_bigquery():
         Extract Bitcoin Price Index containing conversion rates of Bitcoin with USD, GBP, and EUR from [CoinDesk's API](https://api.coindesk.com/v1/bpi/currentprice.json), and save the raw JSON on Google Cloud Storage.
         """
         
-        import requests, json
+        import requests, json, os
         from google.cloud import storage as gcp_storage
         
         from bpi_etl.common_module.pydantic_models import BPI
@@ -70,7 +70,6 @@ def bpi_etl_bigquery():
         
         
         # Upload our saved JSON to Google Cloud Storage (snapshotting raw data)
-        
         complete_prefix = create_random_dt_prefix(run_timestamp, return_dict['extract_file'])
         
         # Must be stored to ensure the next tasks know where to find it!
@@ -84,6 +83,11 @@ def bpi_etl_bigquery():
         
         blob_object.upload_from_filename(f"./{return_dict['extract_file']}")
         
+        
+        # Remove the unused file
+        os.remove(return_dict['extract_file'])
+        
+        
         return return_dict
     
     # XR is (well-)known as a shorthand for eXchange Rate
@@ -96,7 +100,7 @@ def bpi_etl_bigquery():
         
         from airflow.models import Variable
         
-        import requests, json
+        import requests, json, os
         from google.cloud import storage as gcp_storage
         
         from bpi_etl.common_module.pydantic_models import HistoricalXR
@@ -133,7 +137,6 @@ def bpi_etl_bigquery():
         
         
         # Upload our saved JSON to Google Cloud Storage (snapshotting raw data)
-        
         complete_prefix = create_random_dt_prefix(pendulum.now(), return_dict['extract_file'])
         
         # Must be stored to ensure the next tasks know where to find it!
@@ -147,6 +150,11 @@ def bpi_etl_bigquery():
         
         blob_object.upload_from_filename(f"./{return_dict['extract_file']}")
         
+        
+        # Remove the unused file
+        os.remove(return_dict['extract_file'])
+        
+        
         return return_dict
     
     @task(multiple_outputs = True)
@@ -156,7 +164,7 @@ def bpi_etl_bigquery():
         Clean, transform, and enrich BPI data with additional IDR conversion rate, given input of all the raw data necessary, and save as a Parquet file on Google Cloud Storage, prepared for loading into BigQuery later 
         """
         
-        import json
+        import json, os
         import pandas as pd
         
         from google.cloud import storage as gcp_storage
@@ -235,7 +243,6 @@ def bpi_etl_bigquery():
         
         
         # Upload our saved parquet to Google Cloud Storage (snapshotting transformed data)
-        
         complete_prefix = create_random_dt_prefix(pendulum.now(), return_dict['extract_file'])
         
         # Must be stored to ensure the next task know where to find it!
@@ -246,6 +253,15 @@ def bpi_etl_bigquery():
         blob_object = bucket.blob(return_dict['gcs_dest'])
         
         blob_object.upload_from_filename(f"./{return_dict['extract_file']}")
+        
+        
+        # Remove unused files
+        files_to_remove = [return_dict['extract_file'], bpi_data_loc['extract_file'], 
+                           xr_data_loc['extract_file']]
+                           
+        for file in files_to_remove:
+            os.remove(file)
+        
         
         return return_dict
     
