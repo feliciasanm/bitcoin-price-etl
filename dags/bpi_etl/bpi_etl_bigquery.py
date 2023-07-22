@@ -5,7 +5,7 @@ import pendulum
 # We will write the DAG using the TaskFlow API introduced in Airflow 2.0
 from airflow.decorators import dag, task
 
-def create_random_dt_prefix(timestamp, filename):
+def create_random_dt_prefix(timestamp: str, filename: str) -> str:
     """
     Create a random prefix using MD5 hash on top of a datetime-based prefix for Google Cloud Storage objects
     
@@ -35,7 +35,7 @@ def bpi_etl_bigquery():
     """
     
     @task(multiple_outputs = True)
-    def extract_bpi():
+    def extract_bpi() -> dict:
         """
         ## Extract BPI
         Extract Bitcoin Price Index containing conversion rates of Bitcoin with USD, GBP, and EUR from [CoinDesk's API](https://api.coindesk.com/v1/bpi/currentprice.json), and save the raw JSON on Google Cloud Storage.
@@ -92,7 +92,7 @@ def bpi_etl_bigquery():
     
     # XR is (well-)known as a shorthand for eXchange Rate
     @task(multiple_outputs = True)
-    def extract_xr(fetch_timestamp):
+    def extract_xr(fetch_timestamp: str) -> dict:
         """
         ## Extract IDR Exchange Rate (XR)
         Extract the latest, hourly USD-IDR exchange rate from [Open Exchange Rates API](https://docs.openexchangerates.org/reference/api-introduction), to be used to enrich BPI data later, and save the raw JSON on Google Cloud Storage.
@@ -158,7 +158,7 @@ def bpi_etl_bigquery():
         return return_dict
     
     @task(multiple_outputs = True)
-    def transform_data(bpi_data_loc, xr_data_loc):
+    def transform_data(bpi_data_loc: dict, xr_data_loc: dict) -> dict:
         """
         ## Transform Data
         Clean, transform, and enrich BPI data with additional IDR conversion rate, given input of all the raw data necessary, and save as a Parquet file on Google Cloud Storage, prepared for loading into BigQuery later 
@@ -266,7 +266,7 @@ def bpi_etl_bigquery():
         return return_dict
     
     @task()
-    def load_data(final_data_loc):
+    def load_data(final_data_loc: dict) -> None:
         """
         ## Load Data
         Load enriched and cleaned BPI data into BigQuery from a Parquet file saved on Google Cloud Storage previously.
