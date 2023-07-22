@@ -58,11 +58,22 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    # The most efficient way to set up what we need are setting these env variables, so far
+    # Be sure to have an .env file or something with similar function that specify
+    # these env variables!
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    # For GCP ADC, see the set-up here
+    # https://cloud.google.com/docs/authentication/provide-credentials-adc
+    GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
+    # For using apache-airflow-providers-google, see the set-up here
+    # https://airflow.apache.org/docs/apache-airflow-providers-google/stable/connections/gcp.html    
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: ${AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+    # Put ADC keys here
+    - ./keys:/opt/airflow/keys
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
