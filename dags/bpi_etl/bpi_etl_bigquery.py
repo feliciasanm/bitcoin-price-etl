@@ -44,6 +44,8 @@ def bpi_etl_bigquery():
         import requests, json
         from google.cloud import storage as gcp_storage
         
+        from bpi_etl.common_module.pydantic_models import BPI
+        
         # We will store several details that the next tasks will need
         # to locate the file created in this task
         return_dict = {}
@@ -54,14 +56,17 @@ def bpi_etl_bigquery():
         return_dict['run_timestamp'] = run_timestamp.to_datetime_string()
         
         
-        # Get and store data from the CoinDesk BPI API, and store the JSON filename
+        # Get, validate, and store data from the CoinDesk BPI API, and store the JSON filename
         return_dict['extract_file'] = 'bpi-raw-data.json'
         
         bpi_req = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
         bpi_json = bpi_req.json()
         
+        # Validation with Pydantic
+        bpi_dict = BPI(**bpi_json).dict()
+        
         with open(return_dict['extract_file'], 'w') as file:
-            json.dump(bpi_json, file)
+            json.dump(bpi_dict, file)
         
         
         # Upload our saved JSON to Google Cloud Storage (snapshotting raw data)
@@ -94,6 +99,8 @@ def bpi_etl_bigquery():
         import requests, json
         from google.cloud import storage as gcp_storage
         
+        from bpi_etl.common_module.pydantic_models import HistoricalXR
+        
         fetch_datetime = pendulum.parse(fetch_timestamp)
 
         # We will store several details that the next tasks will need
@@ -101,7 +108,7 @@ def bpi_etl_bigquery():
         return_dict = {}
         
         
-        # Get and store data from the Open Exchange Rates API, and store the JSON filename
+        # Get, validate, and store data from the Open Exchange Rates API, and store the JSON filename
         return_dict['extract_file'] = 'rupiah-exchange-rate.json'
         
         xr_fetch_date = fetch_datetime.strftime('%Y-%m-%d')
@@ -117,9 +124,12 @@ def bpi_etl_bigquery():
         IDR_xr_req = requests.get(IDR_xr_url, params = auth_params)
 
         IDR_xr_json = IDR_xr_req.json()
-
+        
+        # Validation with Pydantic
+        IDR_xr_dict = HistoricalXR(**IDR_xr_json).dict()
+        
         with open(return_dict['extract_file'], 'w') as file:
-            json.dump(IDR_xr_json, file)
+            json.dump(IDR_xr_dict, file)
         
         
         # Upload our saved JSON to Google Cloud Storage (snapshotting raw data)
