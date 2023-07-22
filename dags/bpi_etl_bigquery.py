@@ -12,10 +12,18 @@ from airflow.decorators import dag, task
     catchup = False
 )
 def bpi_etl_bigquery():
-
+    """
+    # Bitcoin Price Index - ETL to BigQuery
+    Extract data from [CoinDesk's Bitcoin Price Index (BPI) API](https://api.coindesk.com/v1/bpi/currentprice.json), clean and transform while enriching with IDR exchange rate from [Open Exchange Rates API](https://docs.openexchangerates.org/reference/api-introduction), load into BigQuery (frequency = hourly).
+    """
+    
     @task(multiple_outputs = True)
     def extract_bpi():
-    
+        """
+        ## Extract BPI
+        Extract Bitcoin Price Index containing conversion rates of Bitcoin with USD, GBP, and EUR from [CoinDesk's API](https://api.coindesk.com/v1/bpi/currentprice.json), and save the raw JSON on Google Cloud Storage.
+        """
+        
         import requests, json, hashlib
         from google.cloud import storage as gcp_storage
         
@@ -65,7 +73,11 @@ def bpi_etl_bigquery():
     # XR is (well-)known as a shorthand for eXchange Rate
     @task(multiple_outputs = True)
     def extract_xr(fetch_timestamp):
-    
+        """
+        ## Extract IDR Exchange Rate (XR)
+        Extract the latest, hourly USD-IDR exchange rate from [Open Exchange Rates API](https://docs.openexchangerates.org/reference/api-introduction), to be used to enrich BPI data later, and save the raw JSON on Google Cloud Storage.
+        """
+        
         from airflow.models import Variable
         
         import requests, json, hashlib
@@ -87,7 +99,9 @@ def bpi_etl_bigquery():
             'app_id': Variable.get('oer_api_key'),
             'symbols': 'IDR'
         }
-
+        
+        # Despite using the historical API, actually it has identical content
+        # if we call the API during the day queried
         IDR_xr_url = f'https://openexchangerates.org/api/historical/{xr_fetch_date}.json'
         IDR_xr_req = requests.get(IDR_xr_url, params = auth_params)
 
@@ -122,10 +136,10 @@ def bpi_etl_bigquery():
     
     @task(multiple_outputs = True)
     def transform_data(bpi_data_loc, xr_data_loc):
-        '''
-            Transform and enrich data from CoinDesk's Bitcoin Price Index,
-            given location of all the raw data necessary
-        '''
+        """
+        ## Transform Data
+        Clean, transform, and enrich BPI data with additional IDR conversion rate, given input of all the raw data necessary, and save as a Parquet file on Google Cloud Storage, prepared for loading into BigQuery later 
+        """
         
         import json, hashlib
         import pandas as pd
@@ -228,7 +242,11 @@ def bpi_etl_bigquery():
     
     @task()
     def load_data(final_data_loc):
-    
+        """
+        ## Load Data
+        Load enriched and cleaned BPI data into BigQuery from a Parquet file saved on Google Cloud Storage previously.
+        """
+        
         from google.cloud import bigquery
         
         bq_client = bigquery.Client()
