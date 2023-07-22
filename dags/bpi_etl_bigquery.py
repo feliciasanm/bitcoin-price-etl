@@ -104,7 +104,7 @@ def bpi_etl_bigquery():
         with open(return_dict['extract_file'], 'rb') as file:
             md5_prefix = hashlib.md5(file.read()).hexdigest()[0:6]
             
-        timestamp_prefix = fetch_datetime.strftime('%Y-%m-%d-%H-%M-%S')
+        timestamp_prefix = pendulum.now().strftime('%Y-%m-%d-%H-%M-%S')
         complete_prefix = f'{md5_prefix}-{timestamp_prefix}'
         
         # Must be stored to ensure the next tasks know where to find it!
@@ -122,5 +122,6 @@ def bpi_etl_bigquery():
     
     bpi_data_info = extract_bpi()
     xr_data_loc = extract_xr(bpi_data_info['run_timestamp'])
-
+    
+    
 bpi_etl_bigquery()
