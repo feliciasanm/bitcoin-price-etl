@@ -226,10 +226,33 @@ def bpi_etl_bigquery():
         
         return return_dict
     
+    @task()
+    def load_data(final_data_loc):
+    
+        from google.cloud import bigquery
+        
+        bq_client = bigquery.Client()
+        
+        job_config = bigquery.LoadJobConfig(
+            write_disposition = bigquery.WriteDisposition.WRITE_APPEND,
+            source_format = bigquery.SourceFormat.PARQUET
+        )
+        
+        gcs_uri = f"gs://{final_data_loc['gcs_bucket']}/{final_data_loc['gcs_dest']}"
+        bq_table_id = 'bitcoin_price_index.bpi_xr_hourly'
+        
+        load_job = bq_client.load_table_from_uri(
+            gcs_uri, bq_table_id, job_config = job_config
+        )
+            
+        load_job.result()
+    
     bpi_data_info = extract_bpi()
     xr_data_loc = extract_xr(bpi_data_info['run_timestamp'])
     
     final_data_loc = transform_data(bpi_data_info, xr_data_loc)
+    
+    load_data(final_data_loc)
     
     
 bpi_etl_bigquery()
